@@ -1,0 +1,21 @@
+{
+  "name": "users-api",
+  "version": "1.0.0",
+  "description": "Developer test",
+  "main": "app/server.es6",
+  "scripts": {
+    "start": "node app/server.es6",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/jlgasparrini/developer-test.git"
+  },
+  "author": "jlgasparrini@gmail.com",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/jlgasparrini/developer-test#readme",
+  "dependencies": {
+    "express": "^4.14.0",
+    "pg": "^6.1.0"
+  }
+}

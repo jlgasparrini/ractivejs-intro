@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang='en-US'>
+  <head>
+    <meta charset='utf-8'>
+    <title>Ractive test</title>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- Ractivejs -->
+    <script src='http://cdn.ractivejs.org/latest/ractive.min.js'></script>
+  </head>
+
+  <body>
+    <div class="row">
+      <h1 class="text-center">Ractive test!</h1>
+
+      <div class="col-md-5 col-sm-5 col-xs-10 col-md-offset-1">
+        <div class="panel panel-success">
+          <div class="panel-heading">
+            <h3 class="panel-title">New user</h3>
+          </div>
+          <div class="panel-body">
+            <!-- I will render the form component here -->
+            <div id='render-user-form'> </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-5 col-sm-5 col-xs-10">
+        <div class="panel panel-info">
+          <div class="panel-heading">
+            <h3 class="panel-title">Users list</h3>
+          </div>
+          <div class="panel-body" style="padding: 0px;">
+          </div>
+					<!-- I will render the table component here -->
+					<div id='render-users-table'> </div>
+        </div>
+      </div>
+    </div>
+  </body>
+
+  <script id='user-form' type='text/ractive'>
+    <form on-submit="submit">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input value="{{username}}" class="form-control" id="username" placeholder="Create your username ...">
+      </div>
+      <div class="form-group">
+        <label for="email-address">Email address</label>
+        <input value="{{email}}" type="email" class="form-control" id="email-address" placeholder="Your email address ...">
+      </div>
+      <div class="form-group">
+        <label for="about-you">About you</label>
+        <textarea value="{{about}}" class="form-control" id="about-you" placeholder="Some interesting of you ..." style="max-width:100%"></textarea>
+      </div>
+
+      <div class="pull-right">
+        <button type="button" on-click="clear-form" class="btn btn-sm btn-danger">
+          <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+          Clear
+        </button>
+        <button type="submit" class="btn btn-lg btn-success">
+          <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+          Done
+        </button>
+      </div>
+    </form>
+  </script>
+
+  <script id="users-table" type="text/ractive">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>About you</th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+				{{#each users}}
+					<tr>
+						<td>{{id}}</td>
+						<td>{{username}}</td>
+						<td>{{email}}</td>
+						<td>{{about}}</td>
+						<td width="1%" on-click="edit">
+							<span class="btn btn-sm glyphicon glyphicon-pencil" value="{{id}}" aria-hidden="true"></span>
+						</td>
+						<td width="1%" on-click="delete">
+							<span class="btn btn-sm glyphicon glyphicon-remove" data-id="{{id}}" aria-hidden="true"></span>
+						</td>
+					</tr>
+				{{/each}}
+        <tr>
+        </tr>
+      </tbody>
+    </table>
+  </script>
+
+  <script>
+    // Form component
+    var userForm = new Ractive({
+      el: '#render-user-form',
+      template: '#user-form'
+    });
+
+    // Table component
+    var usersList = new Ractive({
+      el: '#render-users-table',
+      template: '#users-table',
+      data: { users: [
+        {
+          id: 1,
+          username: 'Pedro perez',
+          email: 'pedro@gmai.com',
+          about: 'I love music and computer programming'
+        },
+        {
+          id: 2,
+          username: 'Francisco Ramirez',
+          email: 'pancho@outlook.com',
+          about: 'I love computer science and mobile development! :D'
+        },
+        {
+          id: 3,
+          username: 'Leonel Gasparrini',
+          email: 'jlgasparrini@gmail.com',
+          about: 'lalalal'
+        }
+      ]
+    }
+    });
+
+    // Form events handlers
+    userForm.on('submit', function(event) {
+      event.original.preventDefault();
+      console.log('Submitted... Send ajax request to node server!');
+      // Wait success response for get Id
+      var username = this.get('username');
+      var email = this.get('email');
+      var about = this.get('about');
+      var users = usersList.get('users');
+
+      // Update table
+      users.push({ id: 0, username: username, email: email, about: about });
+      usersList.set('users', users);
+
+      // Clear form
+      this.set('username', '');
+      this.set('email', '');
+      this.set('about', '');
+    });
+
+    userForm.on('clear-form', function(event) {
+      this.set('username', '');
+      this.set('email', '');
+      this.set('about', '');
+    })
+
+    // Table events handlers
+    usersList.on('delete', function(event) {
+      var id = event.original.srcElement.getAttribute("data-id");
+      var users = this.get('users');
+      users = users.filter(function(user) { return user.id != id });
+      usersList.set('users', users);
+    })
+
+    usersList.on('edit', function(event) {
+      console.log(event.original.srcElement.getAttribute("data-id"))
+    })
+  </script>
+</html>
