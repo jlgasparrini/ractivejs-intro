@@ -6,7 +6,8 @@ Purpose of this:
 
 Setup:
   * Database: install postgresql
-  * Run db schema
+  * Make sure you have a database called “users”
+  * node app/models/database.es6
 
 How to run it:
   * `npm install`
