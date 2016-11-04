@@ -3,6 +3,7 @@
   <head>
     <meta charset='utf-8'>
     <title>Ractive test</title>
+		<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
     <!-- Bootstrap -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <!-- Ractivejs -->
@@ -111,47 +112,52 @@
     var usersList = new Ractive({
       el: '#render-users-table',
       template: '#users-table',
-      data: { users: [
-        {
-          id: 1,
-          username: 'Pedro perez',
-          email: 'pedro@gmai.com',
-          about: 'I love music and computer programming'
-        },
-        {
-          id: 2,
-          username: 'Francisco Ramirez',
-          email: 'pancho@outlook.com',
-          about: 'I love computer science and mobile development! :D'
-        },
-        {
-          id: 3,
-          username: 'Leonel Gasparrini',
-          email: 'jlgasparrini@gmail.com',
-          about: 'lalalal'
-        }
-      ]
-    }
+			init: function() {
+				var that = this;
+				$.getJSON('/api/v1/users', function(data) { that.set('users', data) });
+			},
+      data: { users: [] }
     });
 
     // Form events handlers
     userForm.on('submit', function(event) {
       event.original.preventDefault();
-      console.log('Submitted... Send ajax request to node server!');
+      if (this.get('username').length == 0){
+        alert("User can't be blank");
+        return
+      }
+
+      var that = this;
+      var currentUsers = usersList.get('users');
+      var newUser = {
+        "username": this.get("username"),
+        "email": this.get("email") || "",
+        "about": this.get("about") || ""
+      };
+
       // Wait success response for get Id
-      var username = this.get('username');
-      var email = this.get('email');
-      var about = this.get('about');
-      var users = usersList.get('users');
+      $.ajax({
+        url: '/api/v1/users',
+        method: 'POST',
+        contentType: 'application/json',
+        type: 'json',
+        dataType: 'json',
+        data: JSON.stringify(newUser),
+      }).done(function(data, status, XHR) {
+        // Update table view
+        currentUsers.push({
+          id: data.id,
+          username: data.username,
+          email: data.email,
+          about: data.about
+        });
+        usersList.set('users', currentUsers);
+        // Clear form
+        that.set('username', '');
+        that.set('email', '');
+        that.set('about', '');
+      });
 
-      // Update table
-      users.push({ id: 0, username: username, email: email, about: about });
-      usersList.set('users', users);
-
-      // Clear form
-      this.set('username', '');
-      this.set('email', '');
-      this.set('about', '');
     });
 
     userForm.on('clear-form', function(event) {
@@ -164,8 +170,18 @@
     usersList.on('delete', function(event) {
       var id = event.original.srcElement.getAttribute("data-id");
       var users = this.get('users');
-      users = users.filter(function(user) { return user.id != id });
-      usersList.set('users', users);
+			// Removal from DB
+			$.ajax({
+				url: '/api/v1/users/' + id,
+				method: 'DELETE',
+				type: 'json',
+				dataType: 'json'
+			}).done(function(data, status, XHR) {
+				console.log(data);
+				// Removal from the view
+				users = users.filter(function(user) { return user.id != id });
+				usersList.set('users', users);
+			});
     })
 
     usersList.on('edit', function(event) {
