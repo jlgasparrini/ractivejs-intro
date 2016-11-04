@@ -2,7 +2,7 @@
 
 let express = require('express')
 let app = express()
-const PORT = 3030
+const PORT = process.env.PORT || 3030
 const pg = require('pg')
 const path = require('path')
 var bodyParser = require('body-parser')
