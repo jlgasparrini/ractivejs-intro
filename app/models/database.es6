@@ -1,5 +1,6 @@
 const pg = require('pg')
 
+// Comment this line for run in development
 pg.defaults.ssl = true
 const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/users'
 

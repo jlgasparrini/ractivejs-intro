@@ -12,7 +12,7 @@ const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/
 // Return the little app
 app.get('/', (req, res) => {
   res.sendFile('views/users/index.html', { root: __dirname })
-});
+})
 
 // REST API
 // List all users ~> GET /api/v1/users
@@ -58,10 +58,8 @@ app.post('/api/v1/users', (req, res, next) => {
       return res.status(500).json({ success: false, data: err })
     }
     var query = client.query('INSERT INTO users(username, email, about) ' +
-      'values($1, $2, $3) RETURNING id, username, email, about',
+      'values($1, $2, $3) RETURNING *',
       [data.username, data.email, data.about], (err, res) => {
-        console.log('RESULT')
-        console.log(res)
         result = res.rows[0]
         return
     }) // Saved!
@@ -72,34 +70,59 @@ app.post('/api/v1/users', (req, res, next) => {
   })
 })
 
-app.post('api/v1/users/new', (req, res) => {
+// Update user by id
+app.put('/api/v1/users/:id', (req, res) => {
+  console.log('Updating one user...')
+  const data = {
+    username: req.body.username,
+    email:    req.body.email,
+    about:    req.body.about
+  }
+
+  const id = req.params.id
+  let result = ""
+  pg.connect(connectionString, (err, client, done) => {
+    if(err) { // Handle errors
+      done()
+      console.log(err)
+      return res.status(500).json({ success: false, data: err })
+    }
+  var query = client.query('UPDATE users SET username=($1), email=($2), about=($3) WHERE id=($4) RETURNING *',
+     [data.username, data.email, data.about, id], (err, res) => { // Update user by id
+      result = res.rows[0]
+      return
+    }) // Saved!
+    // After all data is returned, close connection and return result
+    query.on('end', () => {
+      done()
+      return res.json(result)
+    })
+  })
 })
 
-app.get('api/v1/users/:id/update', (req, res) => {
-})
-
+// Delete user by id
 app.delete('/api/v1/users/:id', (req, res) => {
   console.log('Deleting one user...')
-  const results = [];
-  const id = req.params.id;
+  const results = []
+  const id = req.params.id
 
   pg.connect(connectionString, (err, client, done) => {
     if(err) { // Handle errors
-      done();
-      console.log(err);
-      return res.status(500).json({ success: false, data: err });
+      done()
+      console.log(err)
+      return res.status(500).json({ success: false, data: err })
     }
-    client.query('DELETE FROM users WHERE id=($1)', [id]); // Delete user by id
-    var query = client.query('SELECT * FROM users ORDER BY id ASC');
+    client.query('DELETE FROM users WHERE id=($1)', [id]) // Delete user by id
+    var query = client.query('SELECT * FROM users ORDER BY id ASC')
     query.on('row', (row) => {
-      results.push(row);
-    });
+      results.push(row)
+    })
     // After all data is returned, close connection and return results
     query.on('end', () => {
-      done();
-      return res.json(results);
-    });
-  });
+      done()
+      return res.json(results)
+    })
+  })
 })
 
 app.listen(PORT, () => {
