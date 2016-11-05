@@ -84,11 +84,13 @@
 				{{#each users}}
 					<tr>
 						<td>{{id}}</td>
-						<td>{{username}}</td>
-						<td>{{email}}</td>
-						<td>{{about}}</td>
-						<td width="1%" on-click="edit">
-							<span class="btn btn-sm glyphicon glyphicon-pencil" value="{{id}}" aria-hidden="true"></span>
+						<td name="username">{{username}}</td>
+						<td name="email">{{email}}</td>
+						<td name="about">{{about}}</td>
+						<td width="1%">
+							<span class="btn btn-sm glyphicon glyphicon-pencil" data-id="{{id}}"
+               aria-hidden="true" on-click="edit"></span>
+              <span class="btn btn-sm glyphicon glyphicon-ok" data-id="{{id}}" aria-hidden="true" style="display: none;" on-click="update-user"></span>
 						</td>
 						<td width="1%" on-click="delete">
 							<span class="btn btn-sm glyphicon glyphicon-remove" data-id="{{id}}" aria-hidden="true"></span>
@@ -102,6 +104,8 @@
   </script>
 
   <script>
+    "use strict"
+
     // Form component
     var userForm = new Ractive({
       el: '#render-user-form',
@@ -122,7 +126,7 @@
     // Form events handlers
     userForm.on('submit', function(event) {
       event.original.preventDefault();
-      if (this.get('username').length == 0){
+      if (this.get('username').length == 0) {
         alert("User can't be blank");
         return
       }
@@ -157,14 +161,13 @@
         that.set('email', '');
         that.set('about', '');
       });
-
     });
 
     userForm.on('clear-form', function(event) {
       this.set('username', '');
       this.set('email', '');
       this.set('about', '');
-    })
+    });
 
     // Table events handlers
     usersList.on('delete', function(event) {
@@ -177,7 +180,6 @@
 				type: 'json',
 				dataType: 'json'
 			}).done(function(data, status, XHR) {
-				console.log(data);
 				// Removal from the view
 				users = users.filter(function(user) { return user.id != id });
 				usersList.set('users', users);
@@ -185,7 +187,57 @@
     })
 
     usersList.on('edit', function(event) {
-      console.log(event.original.srcElement.getAttribute("data-id"))
+      // Refreshing view...
+      var $clicked = $(event.original.srcElement);
+      $clicked.closest('tr').find('td:gt(0):lt(3)').each(function () {
+        var html = $(this).html();
+        var input = $('<input class="form-control" type="text" />');
+        input.val(html);
+        $(this).html(input);
+      });
+      $clicked.css('display', 'none');
+      $clicked.siblings('.glyphicon-ok').css('display', 'block');
+    })
+
+    usersList.on('update-user', function(event) {
+      event.original.preventDefault();
+      // Refreshing view...
+      var $clicked = $(event.original.srcElement);
+      var users = this.get('users');
+      var that = this
+
+      var updateUser = {
+        "username": $clicked.closest('tr').find('td[name=username] input').val() || "",
+        "email": $clicked.closest('tr').find('td[name=email] input').val() || "",
+        "about": $clicked.closest('tr').find('td[name=about] input').val() || ""
+      };
+      $clicked.closest('tr').find('input').each(function () {
+        var val = $(this).val();
+        $(this).closest('td').html(val);
+      });
+      $clicked.css('display', 'none');
+      $clicked.siblings('.glyphicon-pencil').css('display', 'block');
+      console.log(updateUser)
+      console.log($clicked.closest('tr').find('input[name=username]'))
+      // Updating user...
+      var userId = $clicked.data('id')
+      $.ajax({
+        url: '/api/v1/users/' + userId,
+        method: 'PUT',
+        type: 'json',
+        contentType: 'application/json',
+        dataType: 'json',
+        data: JSON.stringify(updateUser)
+      }).done(function(data, status, XHR) {
+        for (var i = 0; i < users.length; i++) {
+          if (users[i].id == userId) {
+            users[i] = data;
+            that.set('users', users);
+            break;
+          }
+        }
+        that.set('users', users)
+      });
     })
   </script>
 </html>
